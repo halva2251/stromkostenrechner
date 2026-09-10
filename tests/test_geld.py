@@ -2,7 +2,7 @@
 
 from decimal import Decimal
 
-from stromkostenrechner.geld import runden
+from stromkostenrechner.geld import formatieren, formatieren_kwh, runden
 
 
 def test_rundet_kaufmaennisch_aufwaerts():
@@ -20,3 +20,15 @@ def test_rundet_halbe_rappen_konsistent():
 
 def test_rundet_nicht_wenn_bereits_zwei_stellen():
     assert runden(Decimal("1006.07")) == Decimal("1006.07")
+
+
+def test_formatieren_mit_tausendertrennzeichen():
+    assert formatieren(Decimal("1006.07")) == "1'006.07"
+    assert formatieren(Decimal("693.925")) == "693.93"
+    assert formatieren(Decimal("0")) == "0.00"
+
+
+def test_formatieren_kwh():
+    assert formatieren_kwh(2500) == "2'500"
+    assert formatieren_kwh(Decimal("625"), 2) == "625.00"
+    assert formatieren_kwh(Decimal("3249.75"), 2) == "3'249.75"

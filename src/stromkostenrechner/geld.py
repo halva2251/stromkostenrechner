@@ -24,6 +24,23 @@ def runden(betrag: Decimal) -> Decimal:
     return Decimal(betrag).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
+TAUSENDERTRENNZEICHEN = "'"
+
+
 def formatieren(betrag: Decimal) -> str:
-    """Formatiert einen Betrag fuer die Anzeige, zum Beispiel '693.93'."""
-    return f"{runden(betrag):.2f}"
+    """Formatiert einen Betrag fuer die Anzeige, zum Beispiel '1'006.07'.
+
+    Schweizer Schreibweise mit Apostroph als Tausendertrennzeichen, wie in
+    der Aufgabenstellung (CHF 1'006.07).
+    """
+    return _mit_tausendertrennung(f"{runden(betrag):,.2f}")
+
+
+def formatieren_kwh(menge: Decimal | int, nachkommastellen: int = 0) -> str:
+    """Formatiert eine Energiemenge fuer die Anzeige, zum Beispiel '2'500'."""
+    gerundet = Decimal(menge).quantize(Decimal(1).scaleb(-nachkommastellen), rounding=ROUND_HALF_UP)
+    return _mit_tausendertrennung(f"{gerundet:,.{nachkommastellen}f}")
+
+
+def _mit_tausendertrennung(text: str) -> str:
+    return text.replace(",", TAUSENDERTRENNZEICHEN)
