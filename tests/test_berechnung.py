@@ -84,3 +84,52 @@ def test_gueltige_verbrauchswerte(verbrauch):
 def test_ungueltige_verbrauchswerte(verbrauch):
     with pytest.raises(berechnung.UngueltigerVerbrauchError):
         berechnung.pruefe_verbrauch(verbrauch)
+
+
+# Zusaetzliche Tests ueber die fuenf dokumentierten Testfaelle hinaus
+
+
+def test_quartalsverteilung_2500():
+    """Anforderung 4: bei 2500 kWh je 625 kWh pro Quartal."""
+    assert berechnung.verbrauch_pro_quartal(2500) == Decimal("625")
+
+
+def test_quartalsverteilung_ohne_ganzzahldivision():
+    assert berechnung.verbrauch_pro_quartal(2501) == Decimal("625.25")
+
+
+@pytest.mark.parametrize("wert", [True, 2500.0, "2500", None])
+def test_nur_ganze_zahlen_gueltig(wert):
+    with pytest.raises(berechnung.UngueltigerVerbrauchError):
+        berechnung.pruefe_verbrauch(wert)
+
+
+def test_berechne_lehnt_ungueltigen_verbrauch_ab(ekz):
+    with pytest.raises(berechnung.UngueltigerVerbrauchError):
+        berechnung.berechne(ekz, 13000)
+
+
+def test_iwb_guenstiger_bei_kleinem_verbrauch(ekz, iwb):
+    """Wegen des EKZ-Grundtarifs kippt der Vergleich zwischen 317 und 318 kWh."""
+    guenstiger, _ = berechnung.vergleiche(berechnung.berechne(ekz, 317), berechnung.berechne(iwb, 317))
+    assert guenstiger.tarif.netzbetreiber == "IWB"
+    guenstiger, _ = berechnung.vergleiche(berechnung.berechne(ekz, 318), berechnung.berechne(iwb, 318))
+    assert guenstiger.tarif.netzbetreiber == "EKZ"
+
+
+def test_vergleich_reihenfolge_egal(ekz, iwb):
+    a = berechnung.berechne(ekz, 2500)
+    b = berechnung.berechne(iwb, 2500)
+    assert berechnung.vergleiche(a, b) == berechnung.vergleiche(b, a)
+
+
+def test_gleich_teuer_differenz_null(ekz):
+    a = berechnung.berechne(ekz, 2500)
+    guenstiger, differenz = berechnung.vergleiche(a, a)
+    assert guenstiger is a
+    assert differenz == 0
+
+
+def test_total_ist_summe_der_bestandteile(iwb):
+    e = berechnung.berechne(iwb, 12999)
+    assert e.total == e.energiekosten + e.netznutzung + e.weitere_abgaben + e.grundtarif + e.messtarif
