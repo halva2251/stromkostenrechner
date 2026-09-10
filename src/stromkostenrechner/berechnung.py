@@ -6,6 +6,7 @@ weder cli noch gui noch tkinter.
 
 from decimal import Decimal
 
+from .geld import rp_in_chf
 from .modelle import Kostenaufstellung, Tarif
 
 VERBRAUCH_MIN_KWH = 0
@@ -13,6 +14,7 @@ VERBRAUCH_MAX_KWH = 12_999
 VERBRAUCH_VORGABE_KWH = 2_500
 MONATE_PRO_JAHR = 12
 QUARTALE_PRO_JAHR = 4
+PROZENT_BASIS = Decimal("100")
 
 
 class UngueltigerVerbrauchError(ValueError):
@@ -21,7 +23,11 @@ class UngueltigerVerbrauchError(ValueError):
 
 def pruefe_verbrauch(jahresverbrauch_kwh: int) -> None:
     """Prueft den Jahresverbrauch gegen den gueltigen Bereich 0 bis 12999 kWh."""
-    raise NotImplementedError
+    if not VERBRAUCH_MIN_KWH <= jahresverbrauch_kwh <= VERBRAUCH_MAX_KWH:
+        raise UngueltigerVerbrauchError(
+            f"Jahresverbrauch muss zwischen {VERBRAUCH_MIN_KWH} und "
+            f"{VERBRAUCH_MAX_KWH} kWh liegen, war {jahresverbrauch_kwh}."
+        )
 
 
 def berechne(tarif: Tarif, jahresverbrauch_kwh: int) -> Kostenaufstellung:
@@ -31,7 +37,34 @@ def berechne(tarif: Tarif, jahresverbrauch_kwh: int) -> Kostenaufstellung:
     IWB-Einfachtarif sind alle vier Quartalspreise gleich, wodurch dieselbe
     Formel gilt.
     """
-    raise NotImplementedError
+    pruefe_verbrauch(jahresverbrauch_kwh)
+    verbrauch = Decimal(jahresverbrauch_kwh)
+    verbrauch_pro_quartal = verbrauch / QUARTALE_PRO_JAHR
+    quartalspreise = (
+        tarif.energie_q1_rp_kwh,
+        tarif.energie_q2_rp_kwh,
+        tarif.energie_q3_rp_kwh,
+        tarif.energie_q4_rp_kwh,
+    )
+
+    energiekosten = rp_in_chf(sum((verbrauch_pro_quartal * preis for preis in quartalspreise), Decimal("0")))
+    netznutzung = rp_in_chf(verbrauch * tarif.netznutzung_rp_kwh)
+    weitere_abgaben = rp_in_chf(verbrauch * tarif.weitere_abgaben_rp_kwh)
+    grundtarif = tarif.grundtarif_chf_monat * MONATE_PRO_JAHR
+    messtarif = tarif.messtarif_chf_monat * MONATE_PRO_JAHR
+    total = energiekosten + netznutzung + weitere_abgaben + grundtarif + messtarif
+
+    return Kostenaufstellung(
+        tarif=tarif,
+        jahresverbrauch_kwh=jahresverbrauch_kwh,
+        energiekosten=energiekosten,
+        netznutzung=netznutzung,
+        weitere_abgaben=weitere_abgaben,
+        grundtarif=grundtarif,
+        messtarif=messtarif,
+        mwst_anteil=berechne_mwst_anteil(total, tarif.mwst_prozent),
+        total=total,
+    )
 
 
 def berechne_mwst_anteil(bruttobetrag: Decimal, mwst_prozent: Decimal) -> Decimal:
@@ -40,7 +73,7 @@ def berechne_mwst_anteil(bruttobetrag: Decimal, mwst_prozent: Decimal) -> Decima
     Achtung: die Tarifwerte enthalten die Mehrwertsteuer bereits. Der Anteil
     ist deshalb nicht Brutto mal Satz, sondern muss herausgerechnet werden.
     """
-    raise NotImplementedError
+    return bruttobetrag * mwst_prozent / (PROZENT_BASIS + mwst_prozent)
 
 
 def vergleiche(links: Kostenaufstellung, rechts: Kostenaufstellung) -> tuple[Kostenaufstellung, Decimal]:
@@ -50,4 +83,6 @@ def vergleiche(links: Kostenaufstellung, rechts: Kostenaufstellung) -> tuple[Kos
     danach gerundet. Rundet man zuerst die beiden Totale und subtrahiert dann,
     entsteht bei der Kontrollrechnung 312.14 statt der geforderten 312.15.
     """
-    raise NotImplementedError
+    guenstigere = links if links.total < rechts.total else rechts
+    differenz = abs(links.total - rechts.total)
+    return guenstigere, differenz

@@ -11,6 +11,8 @@ Fallstricke der mitgelieferten Datei:
 - Zahlen sind als Text vorhanden und muessen zu Decimal werden, nicht zu float.
 """
 
+import csv
+from decimal import Decimal
 from pathlib import Path
 
 from .modelle import Tarif
@@ -20,9 +22,33 @@ STANDARD_PFAD = Path(__file__).resolve().parents[2] / "data" / "Tarifdaten_Strom
 
 def lade_tarife(pfad: Path = STANDARD_PFAD) -> list[Tarif]:
     """Liest alle Tarifdatensaetze aus der CSV-Datei."""
-    raise NotImplementedError
+    with open(pfad, encoding="utf-8-sig", newline="") as datei:
+        zeilen = csv.DictReader(datei, delimiter=";")
+        return [_zeile_zu_tarif(zeile) for zeile in zeilen]
+
+
+def _zeile_zu_tarif(zeile: dict[str, str]) -> Tarif:
+    return Tarif(
+        tarif_id=zeile["tarif_id"],
+        netzbetreiber=zeile["netzbetreiber"],
+        tarifname=zeile["tarifname"],
+        verbrauch_max_kwh=int(zeile["verbrauch_max_kwh"]),
+        energie_q1_rp_kwh=Decimal(zeile["energie_q1_rp_kwh"]),
+        energie_q2_rp_kwh=Decimal(zeile["energie_q2_rp_kwh"]),
+        energie_q3_rp_kwh=Decimal(zeile["energie_q3_rp_kwh"]),
+        energie_q4_rp_kwh=Decimal(zeile["energie_q4_rp_kwh"]),
+        netznutzung_rp_kwh=Decimal(zeile["netznutzung_rp_kwh"]),
+        weitere_abgaben_rp_kwh=Decimal(zeile["weitere_abgaben_rp_kwh"]),
+        grundtarif_chf_monat=Decimal(zeile["grundtarif_chf_monat"]),
+        messtarif_chf_monat=Decimal(zeile["messtarif_chf_monat"]),
+        mwst_prozent=Decimal(zeile["mwst_prozent"]),
+        quelle=zeile["quelle"],
+    )
 
 
 def tarif_nach_id(tarife: list[Tarif], tarif_id: str) -> Tarif:
     """Sucht einen Tarif anhand seiner ID."""
-    raise NotImplementedError
+    for tarif in tarife:
+        if tarif.tarif_id == tarif_id:
+            return tarif
+    raise KeyError(f"Kein Tarif mit ID '{tarif_id}' gefunden.")
