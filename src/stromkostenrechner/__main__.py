@@ -3,16 +3,16 @@
 import sys
 
 
-def main() -> None:
+def main() -> int:
     if "--cli" in sys.argv:
         from . import cli
 
-        cli.main()
-    else:
-        from . import gui
+        return cli.main()
 
-        gui.main()
+    from . import gui
+
+    return gui.main()
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
