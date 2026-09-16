@@ -73,3 +73,15 @@ def test_eingabe_mit_tausendertrennzeichen(text, erwartet):
 def test_ungueltige_texteingaben(text):
     with pytest.raises(UngueltigerVerbrauchError):
         verbrauch_aus_text(text)
+
+
+def test_fehlende_tarifdatei_beendet_sauber(monkeypatch):
+    from stromkostenrechner.tarif_repository import TarifdatenError
+
+    def kaputt():
+        raise TarifdatenError("Datei fehlt")
+
+    monkeypatch.setattr(cli, "lade_tarife", kaputt)
+    zeilen: list[str] = []
+    assert cli.main(eingabe=lambda _f: "", ausgabe=zeilen.append) == 1
+    assert zeilen == ["Fehler: Datei fehlt"]

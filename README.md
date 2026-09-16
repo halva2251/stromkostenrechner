@@ -20,17 +20,22 @@ Virtuelle Umgebung aktivieren:
 source .venv/bin/activate   # macOS / Linux
 ```
 
-Abhaengigkeiten installieren:
+Abhaengigkeiten und die Applikation selbst installieren (der Befehl muss im
+Projektordner ausgefuehrt werden, `requirements.txt` enthaelt `-e .`):
 
 ```bash
 pip install -r requirements.txt
 ```
+
+Unter Linux fehlt tkinter teilweise, zum Beispiel unter Ubuntu:
+`sudo apt install python3-tk`. Die Konsolenversion funktioniert auch ohne.
 
 ## Starten
 
 ```bash
 python -m stromkostenrechner            # grafische Oberflaeche
 python -m stromkostenrechner --cli      # Konsolenversion
+python -m stromkostenrechner --debug    # zusaetzliche Protokollausgabe
 ```
 
 Die Applikation laeuft ohne Internetverbindung. Die Tarifdaten liegen
@@ -50,6 +55,7 @@ pytest
 | `src/stromkostenrechner/modelle.py` | Datenklassen Tarif und Berechnungsergebnis |
 | `src/stromkostenrechner/tarif_repository.py` | Einlesen der CSV-Datei |
 | `src/stromkostenrechner/berechnung.py` | Berechnungslogik, ohne Ein- und Ausgabe |
+| `src/stromkostenrechner/praesentation.py` | Eingabe umwandeln, Ausgabetexte, gemeinsam fuer CLI und GUI |
 | `src/stromkostenrechner/cli.py` | Konsolenoberflaeche |
 | `src/stromkostenrechner/gui.py` | tkinter-Oberflaeche |
 | `tests/` | Unit-Tests |
