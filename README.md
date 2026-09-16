@@ -60,7 +60,7 @@ pytest
 | `src/stromkostenrechner/gui.py` | tkinter-Oberflaeche |
 | `tests/` | Unit-Tests |
 | `data/` | Tarifdaten, unveraendert uebernommen |
-| `docs/` | Entscheide und Coderichtlinien |
+| `docs/` | Coderichtlinien |
 
 Die Berechnungslogik in `berechnung.py` kennt weder Konsole noch GUI. Beide
 Oberflaechen rufen dieselben Funktionen auf.
